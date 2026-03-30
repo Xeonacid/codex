@@ -1,0 +1,105 @@
+use std::collections::HashMap;
+use std::sync::mpsc as std_mpsc;
+
+use serde_json::Value as JsonValue;
+use tokio::sync::mpsc;
+
+use crate::description::ToolDefinition;
+use crate::response::FunctionCallOutputContentItem;
+
+pub const DEFAULT_EXEC_YIELD_TIME_MS: u64 = 10_000;
+pub const DEFAULT_WAIT_YIELD_TIME_MS: u64 = 10_000;
+pub const DEFAULT_MAX_OUTPUT_TOKENS_PER_EXEC_CALL: usize = 10_000;
+
+#[derive(Clone, Debug)]
+pub struct ExecuteRequest {
+    pub tool_call_id: String,
+    pub enabled_tools: Vec<ToolDefinition>,
+    pub source: String,
+    pub stored_values: HashMap<String, JsonValue>,
+    pub yield_time_ms: Option<u64>,
+    pub max_output_tokens: Option<usize>,
+}
+
+#[derive(Clone, Debug)]
+pub struct WaitRequest {
+    pub cell_id: String,
+    pub yield_time_ms: u64,
+    pub terminate: bool,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum RuntimeResponse {
+    Yielded {
+        cell_id: String,
+        content_items: Vec<FunctionCallOutputContentItem>,
+    },
+    Terminated {
+        cell_id: String,
+        content_items: Vec<FunctionCallOutputContentItem>,
+    },
+    Result {
+        cell_id: String,
+        content_items: Vec<FunctionCallOutputContentItem>,
+        stored_values: HashMap<String, JsonValue>,
+        error_text: Option<String>,
+    },
+}
+
+#[derive(Debug)]
+pub(crate) enum TurnMessage {
+    ToolCall {
+        cell_id: String,
+        id: String,
+        name: String,
+        input: Option<JsonValue>,
+    },
+    Notify {
+        cell_id: String,
+        call_id: String,
+        text: String,
+    },
+}
+
+#[derive(Debug)]
+pub(crate) enum RuntimeCommand {
+    ToolResponse { id: String, result: JsonValue },
+    ToolError { id: String, error_text: String },
+    Terminate,
+}
+
+#[derive(Debug)]
+pub(crate) enum RuntimeEvent {
+    Started,
+    ContentItem(FunctionCallOutputContentItem),
+    YieldRequested,
+    ToolCall {
+        id: String,
+        name: String,
+        input: Option<JsonValue>,
+    },
+    Notify {
+        call_id: String,
+        text: String,
+    },
+    Result {
+        stored_values: HashMap<String, JsonValue>,
+        error_text: Option<String>,
+    },
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct RuntimeTerminateHandle;
+
+impl RuntimeTerminateHandle {
+    pub(crate) fn terminate_execution(&self) -> bool {
+        true
+    }
+}
+
+pub(crate) fn spawn_runtime(
+    _request: ExecuteRequest,
+    _event_tx: mpsc::UnboundedSender<RuntimeEvent>,
+) -> Result<(std_mpsc::Sender<RuntimeCommand>, RuntimeTerminateHandle), String> {
+    Err("code mode runtime is unsupported on riscv64".to_string())
+}

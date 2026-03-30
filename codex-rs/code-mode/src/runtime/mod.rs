@@ -98,10 +98,12 @@ pub(crate) enum RuntimeEvent {
     },
 }
 
+pub(crate) type RuntimeTerminateHandle = v8::IsolateHandle;
+
 pub(crate) fn spawn_runtime(
     request: ExecuteRequest,
     event_tx: mpsc::UnboundedSender<RuntimeEvent>,
-) -> Result<(std_mpsc::Sender<RuntimeCommand>, v8::IsolateHandle), String> {
+) -> Result<(std_mpsc::Sender<RuntimeCommand>, RuntimeTerminateHandle), String> {
     let (command_tx, command_rx) = std_mpsc::channel();
     let (isolate_handle_tx, isolate_handle_rx) = std_mpsc::sync_channel(1);
     let enabled_tools = request
