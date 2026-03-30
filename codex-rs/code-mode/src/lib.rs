@@ -1,5 +1,9 @@
 mod description;
 mod response;
+#[cfg(not(target_arch = "riscv64"))]
+mod runtime;
+#[cfg(target_arch = "riscv64")]
+#[path = "runtime_stub.rs"]
 mod runtime;
 mod service;
 
