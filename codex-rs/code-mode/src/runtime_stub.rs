@@ -101,5 +101,5 @@ pub(crate) fn spawn_runtime(
     _request: ExecuteRequest,
     _event_tx: mpsc::UnboundedSender<RuntimeEvent>,
 ) -> Result<(std_mpsc::Sender<RuntimeCommand>, RuntimeTerminateHandle), String> {
-    Err("code mode runtime is unsupported on riscv64".to_string())
+    Err(String::from("Code mode runtime is unsupported on riscv64"))
 }
